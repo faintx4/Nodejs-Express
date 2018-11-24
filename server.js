@@ -44,28 +44,29 @@ low(adapter)
       db.get('users')
         .push(newUser)
         .write()
-        .then(() => {
-          res.json(newUser);
+        .then((users) => {
+          res.json(users);
         });
     });
 
     app.put('/users/:id', (req, res) => {
-      const updatedUser = db.get('users').find({ id: req.params.id }).assign({
-        name: req.body.name,
-        age: req.body.age,
-      }).value();
-
-      // Not sure about this because updating a user probably is async operation
-      // so it's possible that res.json(updatedUser) could run earlier than user updated
-      res.json(updatedUser);
+      db.get('users')
+        .find({ id: req.params.id })
+        .assign({
+          name: req.body.name,
+          age: req.body.age,
+        }).write()
+        .then((updatedUser) => {
+          res.json(updatedUser);
+        });
     });
 
     app.delete('/users/:id', (req, res) => {
       db.get('users')
         .remove({ id: req.params.id })
         .write()
-        .then(() => {
-          res.sendStatus(200);
+        .then((removedUser) => {
+          res.json(removedUser);
         });
     });
 
