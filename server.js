@@ -1,50 +1,76 @@
 const express = require('express');
+const low = require('lowdb');
+const FileAsync = require('lowdb/adapters/FileAsync');
 const uuidv4 = require('uuid/v4');
-const find = require('lodash/find');
-const remove = require('lodash/remove');
 
-const app = express();
-const PORT = 3000;
-
-const users = [
+const initialUsers = [
   { id: uuidv4(), name: 'Nick', age: 23 },
   { id: uuidv4(), name: 'Den', age: 43 },
   { id: uuidv4(), name: 'John', age: 56 },
   { id: uuidv4(), name: 'Doe', age: 29 },
 ];
 
+const app = express();
+const PORT = 3000;
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-app.get('/', (req, res) => res.send('Hello World'));
-app.get('/users', (req, res) => res.json(users));
-app.get('/users/:id', (req, res) => {
-  res.json(find(users, { id: req.params.id }));
-});
+// Create database instance and start server
+const adapter = new FileAsync('db.json');
 
-app.post('/users', (req, res) => {
-  const newUser = {
-    name: req.body.name,
-    age: req.body.age,
-    id: uuidv4(),
-  };
-  users.push(newUser);
-  res.json(users);
-});
+low(adapter)
+  .then((db) => {
+    app.get('/users', (req, res) => {
+      const users = db.get('users');
+      res.json(users);
+    });
 
-app.put('/users/:id', (req, res) => {
-  const userToUpdate = find(users, { id: req.params.id });
-  // I don't think it's a good way to get user object as reference
-  // but what would you do?
-  userToUpdate.name = req.body.name;
-  userToUpdate.age = req.body.age;
+    app.get('/users/:id', (req, res) => {
+      const user = db.get('users')
+        .find({ id: req.params.id })
+        .value();
 
-  res.json(userToUpdate);
-});
+      res.json(user);
+    });
 
-app.delete('/users/:id', (req, res) => {
-  remove(users, item => item.id === req.params.id);
-  res.sendStatus(200);
-});
+    app.post('/users', (req, res) => {
+      const newUser = {
+        name: req.body.name,
+        age: req.body.age,
+        id: uuidv4(),
+      };
 
-app.listen(PORT, () => console.log(`Listening on port: ${PORT}!`));
+      db.get('users')
+        .push(newUser)
+        .write()
+        .then(() => {
+          res.json(newUser);
+        });
+    });
+
+    app.put('/users/:id', (req, res) => {
+      const updatedUser = db.get('users').find({ id: req.params.id }).assign({
+        name: req.body.name,
+        age: req.body.age,
+      }).value();
+
+      // Not sure about this because updating a user probably is async operation
+      // so it's possible that res.json(updatedUser) could run earlier than user updated
+      res.json(updatedUser);
+    });
+
+    app.delete('/users/:id', (req, res) => {
+      db.get('users')
+        .remove({ id: req.params.id })
+        .write()
+        .then(() => {
+          res.sendStatus(200);
+        });
+    });
+
+    // Set db default values
+    return db.defaults({ users: initialUsers }).write();
+  }).then(() => {
+    app.listen(PORT, () => console.log(`Listening on port: ${PORT}!`));
+  });

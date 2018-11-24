@@ -4,16 +4,16 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "nodemon server.js"
+    "start": "nodemon server.js --ignore db.json"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "body-parser": "^1.18.3",
     "express": "^4.16.4",
     "install": "^0.12.2",
     "lodash": "^4.17.11",
+    "lowdb": "^1.0.0",
     "npm": "^6.4.1",
     "uuid": "^3.3.2"
   },
