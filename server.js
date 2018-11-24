@@ -18,6 +18,10 @@ app.use(express.urlencoded({ extended: false }));
 
 app.get('/', (req, res) => res.send('Hello World'));
 app.get('/users', (req, res) => res.json(users));
+app.get('/users/:id', (req, res) => {
+  res.json(find(users, { id: req.params.id }));
+});
+
 app.post('/users', (req, res) => {
   const newUser = {
     name: req.body.name,
