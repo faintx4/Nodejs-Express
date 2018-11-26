@@ -27,17 +27,19 @@ low(adapter)
     });
 
     app.get('/users/:id', (req, res) => {
+      const { params: { id } } = req;
       const user = db.get('users')
-        .find({ id: req.params.id })
+        .find({ id })
         .value();
 
       res.json(user);
     });
 
     app.post('/users', (req, res) => {
+      const { body: { name, age } } = req;
       const newUser = {
-        name: req.body.name,
-        age: req.body.age,
+        name,
+        age,
         id: uuidv4(),
       };
 
@@ -50,11 +52,16 @@ low(adapter)
     });
 
     app.put('/users/:id', (req, res) => {
+      const {
+        params: { id },
+        body: { name, age },
+      } = req;
+
       db.get('users')
-        .find({ id: req.params.id })
+        .find({ id })
         .assign({
-          name: req.body.name,
-          age: req.body.age,
+          name,
+          age,
         }).write()
         .then((updatedUser) => {
           res.json(updatedUser);
@@ -62,8 +69,9 @@ low(adapter)
     });
 
     app.delete('/users/:id', (req, res) => {
+      const { params: { id } } = req;
       db.get('users')
-        .remove({ id: req.params.id })
+        .remove({ id })
         .write()
         .then((removedUser) => {
           res.json(removedUser);
